@@ -7,14 +7,20 @@ import { describe, expect, test } from 'vitest';
 // clear the window on this date, and the exemption must not outlive the reason for it.
 const EXPIRES_ON = Date.parse('2026-09-23T00:00:00Z');
 
+// @solana-program/memo 0.14.1 was exempted the same way; it clears the window on this date.
+const MEMO_EXPIRES_ON = Date.parse('2026-09-30T00:00:00Z');
+
 function expiredExemptions(workspace: string, now: number): string[] {
-    if (now < EXPIRES_ON) return [];
-    return workspace
+    const names = workspace
         .split('\n')
         .map(line => line.trim())
         .filter(line => line.startsWith("- '") && line.endsWith("'"))
-        .map(line => line.slice(3, -1))
-        .filter(name => name.startsWith('@solana/') || name === 'undici-types');
+        .map(line => line.slice(3, -1));
+    return names.filter(name => {
+        if (name === '@solana-program/memo') return now >= MEMO_EXPIRES_ON;
+        if (name.startsWith('@solana/') || name === 'undici-types') return now >= EXPIRES_ON;
+        return false;
+    });
 }
 
 describe('release-age exemptions', () => {
@@ -26,6 +32,11 @@ describe('release-age exemptions', () => {
 
     test('should report the kit exemptions on the day they expire', () => {
         expect(expiredExemptions(workspace, EXPIRES_ON)).toContain('@solana/kit');
+    });
+
+    test('should report the memo exemption on the day it expires', () => {
+        expect(expiredExemptions(workspace, MEMO_EXPIRES_ON - 1)).not.toContain('@solana-program/memo');
+        expect(expiredExemptions(workspace, MEMO_EXPIRES_ON)).toContain('@solana-program/memo');
     });
 
     test('should carry no expired exemption', () => {
