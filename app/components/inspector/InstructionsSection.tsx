@@ -151,7 +151,7 @@ function InspectorInstructionCard({
     message: VersionedMessage;
     ix: TransactionInstruction;
     index: number;
-    innerCards?: React.ReactNode[];
+    innerCards?: JSX.Element[];
 }) {
     const { cluster } = useCluster();
     const dispatcher = useInstructionParser();
@@ -310,7 +310,15 @@ function InspectorInstructionCard({
         case SPL_MEMO_PROGRAM_LABEL:
             return <MemoDetailsCard key={index} ix={parsedIx} raw={ix} index={index} />;
         case ADDRESS_LOOKUP_TABLE_PROGRAM_LABEL:
-            return <AddressLookupTableDetailsCard key={index} ix={parsedIx} raw={ix} index={index} />;
+            return (
+                <AddressLookupTableDetailsCard
+                    key={index}
+                    ix={parsedIx}
+                    raw={ix}
+                    index={index}
+                    innerCards={innerCards}
+                />
+            );
         case BPF_UPGRADEABLE_LOADER_PROGRAM_LABEL:
             return (
                 <ErrorBoundary
